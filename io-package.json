@@ -1,0 +1,106 @@
+{
+	"common": {
+		"name": "truenas",
+		"version": "0.0.1",
+		"news": {
+			"0.0.1": {
+				"en": "initial release",
+				"de": "Erstveröffentlichung",
+				"ru": "Начальная версия",
+				"pt": "lançamento inicial",
+				"nl": "Eerste uitgave",
+				"fr": "Première version",
+				"it": "Versione iniziale",
+				"es": "Versión inicial",
+				"pl": "Pierwsze wydanie",
+				"uk": "Початкова версія",
+				"zh-cn": "首次出版"
+			}
+		},
+		"titleLang": {
+			"en": "TrueNAS",
+			"de": "TrueNAS",
+			"ru": "TrueNAS",
+			"pt": "TrueNAS",
+			"nl": "TrueNAS",
+			"fr": "Vrai NAS",
+			"it": "TrueNAS",
+			"es": "TrueNAS",
+			"pl": "Prawdziwy NAS",
+			"uk": "TrueNAS",
+			"zh-cn": "TrueNAS"
+		},
+		"desc": {
+			"en": "Monitor TrueNAS SCALE devices via the official JSON-RPC 2.0 WebSocket API",
+			"de": "Überwachen Sie TrueNAS SCALE-Geräte über die offizielle JSON-RPC 2.0 WebSocket API",
+			"ru": "Мониторинг устройств TrueNAS SCALE через официальный API JSON-RPC 2.0 WebSocket.",
+			"pt": "Monitore dispositivos TrueNAS SCALE por meio da API JSON-RPC 2.0 WebSocket oficial",
+			"nl": "Monitor TrueNAS SCALE-apparaten via de officiële JSON-RPC 2.0 WebSocket API",
+			"fr": "Surveillez les appareils TrueNAS SCALE via l'API WebSocket officielle JSON-RPC 2.0",
+			"it": "Monitora i dispositivi TrueNAS SCALE tramite l'API WebSocket JSON-RPC 2.0 ufficiale",
+			"es": "Supervise los dispositivos TrueNAS SCALE a través de la API WebSocket oficial JSON-RPC 2.0",
+			"pl": "Monitoruj urządzenia TrueNAS SCALE za pośrednictwem oficjalnego interfejsu API JSON-RPC 2.0 WebSocket",
+			"uk": "Відстежуйте пристрої TrueNAS SCALE через офіційний JSON-RPC 2.0 WebSocket API",
+			"zh-cn": "通过官方 JSON-RPC 2.0 WebSocket API 监控 TrueNAS SCALE 设备"
+		},
+		"authors": ["U.R.D.L <claude@preindl.at>"],
+		"keywords": ["truenas", "nas", "storage", "pool", "zfs", "smart"],
+		"licenseInformation": {
+			"type": "free",
+			"license": "MIT"
+		},
+		"platform": "Javascript/Node.js",
+		"icon": "truenas.png",
+		"enabled": true,
+		"extIcon": "https://raw.githubusercontent.com/urdl/ioBroker.truenas/main/admin/truenas.png",
+		"readme": "https://github.com/urdl/ioBroker.truenas/blob/main/README.md",
+		"loglevel": "info",
+		"tier": 3,
+		"mode": "daemon",
+		"type": "storage",
+		"compact": true,
+		"connectionType": "local",
+		"dataSource": "poll",
+		"adminUI": {
+			"config": "json"
+		},
+		"dependencies": [
+			{
+				"js-controller": ">=6.0.11"
+			}
+		],
+		"globalDependencies": [
+			{
+				"admin": ">=7.0.23"
+			}
+		]
+	},
+	"native": {
+		"option1": true,
+		"option2": "42"
+	},
+	"objects": [],
+	"instanceObjects": [
+		{
+			"_id": "info",
+			"type": "channel",
+			"common": {
+				"name": "Information"
+			},
+			"native": {}
+		},
+		{
+			"_id": "info.connection",
+			"type": "state",
+			"common": {
+				"role": "indicator.connected",
+				"name": "Device or service connected",
+				"type": "boolean",
+				"read": true,
+				"write": false,
+				"def": false
+			},
+			"native": {}
+		}
+	]
+}
