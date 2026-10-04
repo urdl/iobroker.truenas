@@ -1,0 +1,20 @@
+{
+  "name": "iobroker.truenas",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://richie:42b970ffb66d6c3dd6e2152ae9f269b8f77cdaf1@vie.preindl.at/git/richie/iobroker.truenas.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@truenas/api-client": "^8.0.0",
+    "rxjs": "^7.8.2"
+  }
+}
