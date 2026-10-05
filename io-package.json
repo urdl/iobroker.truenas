@@ -23,10 +23,10 @@
 			"ru": "TrueNAS",
 			"pt": "TrueNAS",
 			"nl": "TrueNAS",
-			"fr": "Vrai NAS",
+			"fr": "TrueNAS",
 			"it": "TrueNAS",
 			"es": "TrueNAS",
-			"pl": "Prawdziwy NAS",
+			"pl": "TrueNAS",
 			"uk": "TrueNAS",
 			"zh-cn": "TrueNAS"
 		},
@@ -76,9 +76,14 @@
 		]
 	},
 	"native": {
-		"option1": true,
-		"option2": "42"
+		"host": "",
+		"username": "root",
+		"apiKey": "",
+		"pollInterval": 60,
+		"allowSelfSigned": true
 	},
+	"encryptedNative": ["apiKey"],
+	"protectedNative": ["apiKey"],
 	"objects": [],
 	"instanceObjects": [
 		{

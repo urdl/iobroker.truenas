@@ -1,5 +1,9 @@
 {
 	"truenas adapter settings": "Adaptereinstellungen für truenas",
-	"option1": "Option1",
-	"option2": "Option2"
+	"host": "Host (IP oder Hostname)",
+	"username": "Benutzername",
+	"apiKey": "API-Schlüssel",
+	"pollInterval": "Abfrageintervall (Sekunden)",
+	"allowSelfSigned": "Selbstsigniertes TLS-Zertifikat erlauben",
+	"hostRequired": "Host darf keine Leerzeichen enthalten"
 }

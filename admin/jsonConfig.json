@@ -2,25 +2,59 @@
 	"i18n": true,
 	"type": "panel",
 	"items": {
-		"option1": {
-			"type": "checkbox",
-			"label": "option1",
-			"newLine": true,
-			"xs": 12,
-			"sm": 12,
-			"md": 6,
-			"lg": 4,
-			"xl": 4
-		},
-		"option2": {
+		"host": {
 			"type": "text",
-			"label": "option2",
+			"label": "host",
 			"newLine": true,
 			"xs": 12,
 			"sm": 12,
 			"md": 6,
-			"lg": 4,
-			"xl": 4
+			"lg": 6,
+			"xl": 4,
+			"validator": "^[^\\s]+$",
+			"validatorErrorText": "hostRequired"
+		},
+		"username": {
+			"type": "text",
+			"label": "username",
+			"newLine": false,
+			"xs": 12,
+			"sm": 6,
+			"md": 3,
+			"lg": 3,
+			"xl": 2
+		},
+		"apiKey": {
+			"type": "password",
+			"label": "apiKey",
+			"newLine": true,
+			"xs": 12,
+			"sm": 12,
+			"md": 8,
+			"lg": 6,
+			"xl": 5
+		},
+		"pollInterval": {
+			"type": "number",
+			"label": "pollInterval",
+			"newLine": true,
+			"min": 10,
+			"max": 3600,
+			"xs": 12,
+			"sm": 6,
+			"md": 4,
+			"lg": 3,
+			"xl": 2
+		},
+		"allowSelfSigned": {
+			"type": "checkbox",
+			"label": "allowSelfSigned",
+			"newLine": false,
+			"xs": 12,
+			"sm": 6,
+			"md": 4,
+			"lg": 3,
+			"xl": 2
 		}
 	}
 }

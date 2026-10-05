@@ -1,182 +1,276 @@
 'use strict';
 
-/*
- * Created with @iobroker/create-adapter v3.1.5
- */
-
-// The adapter-core module gives you access to the core ioBroker functions
-// you need to create an adapter
 const utils = require('@iobroker/adapter-core');
-
-// Load your modules here, e.g.:
-// const fs = require('fs');
+const TrueNasClient = require('./lib/truenas-client');
 
 class Truenas extends utils.Adapter {
 	/**
-	 * @param {Partial<utils.AdapterOptions>} [options] - Adapter options
+	 * @param {Partial<utils.AdapterOptions>} [options]
 	 */
 	constructor(options) {
-		super({
-			...options,
-			name: 'truenas',
-		});
+		super({ ...options, name: 'truenas' });
 		this.on('ready', this.onReady.bind(this));
-		this.on('stateChange', this.onStateChange.bind(this));
-		// this.on('objectChange', this.onObjectChange.bind(this));
-		// this.on('message', this.onMessage.bind(this));
 		this.on('unload', this.onUnload.bind(this));
+		this._client = null;
+		this._pollTimer = null;
 	}
 
-	/**
-	 * Is called when databases are connected and adapter received configuration.
-	 */
 	async onReady() {
-		// Initialize your adapter here
-
-		// Reset the connection indicator during startup
 		this.setState('info.connection', false, true);
 
-		// The adapters config (in the instance object everything under the attribute "native") is accessible via
-		// this.config:
-		this.log.debug('config option1: ${this.config.option1}');
-		this.log.debug('config option2: ${this.config.option2}');
+		const { host, username, apiKey, pollInterval, allowSelfSigned } = this.config;
 
-		/*
-		For every state in the system there has to be also an object of type state
-		Here a simple template for a boolean variable named "testVariable"
-		Because every adapter instance uses its own unique namespace variable names can't collide with other adapters variables
+		if (!host || !apiKey) {
+			this.log.error('Configuration incomplete: host and API key are required');
+			this.terminate('INVALID_ADAPTER_CONFIG', utils.EXIT_CODES.INVALID_ADAPTER_CONFIG);
+			return;
+		}
 
-		IMPORTANT: State roles should be chosen carefully based on the state's purpose.
-		           Please refer to the state roles documentation for guidance:
-		           https://www.iobroker.net/#en/documentation/dev/stateroles.md
-		*/
-		await this.setObjectNotExistsAsync('testVariable', {
-			type: 'state',
-			common: {
-				name: 'testVariable',
-				type: 'boolean',
-				role: 'indicator',
-				read: true,
-				write: true,
-			},
-			native: {},
+		this._client = new TrueNasClient({
+			host,
+			username: username || 'root',
+			apiKey,
+			allowSelfSigned: allowSelfSigned !== false,
+			log: this.log,
 		});
 
-		// In order to get state updates, you need to subscribe to them. The following line adds a subscription for our variable we have created above.
-		this.subscribeStates('testVariable');
-		// You can also add a subscription for multiple states. The following line watches all states starting with "lights."
-		// this.subscribeStates('lights.*');
-		// Or, if you really must, you can also watch all states. Don't do this if you don't need to. Otherwise this will cause a lot of unnecessary load on the system:
-		// this.subscribeStates('*');
+		await this._connect();
 
-		/*
-			setState examples
-			you will notice that each setState will cause the stateChange event to fire (because of above subscribeStates cmd)
-		*/
-		// the variable testVariable is set to true as command (ack=false)
-		await this.setState('testVariable', true);
+		const interval = Math.max(10, Number(pollInterval) || 60) * 1000;
+		this._pollTimer = this.setInterval(() => this._poll(), interval);
+	}
 
-		// same thing, but the value is flagged "ack"
-		// ack should be always set to true if the value is received from or acknowledged from the target system
-		await this.setState('testVariable', { val: true, ack: true });
+	async _connect() {
+		try {
+			await this._client.connect();
+			this.setState('info.connection', true, true);
+			await this._poll();
+		} catch (err) {
+			this.setState('info.connection', false, true);
+			this.log.error(`Connection failed: ${err.message}`);
+		}
+	}
 
-		// same thing, but the state is deleted after 30s (getState will return null afterwards)
-		await this.setState('testVariable', { val: true, ack: true, expire: 30 });
+	async _poll() {
+		if (!this._client || !this._client.connected) {
+			this.setState('info.connection', false, true);
+			this.log.warn('Not connected, attempting reconnect...');
+			try {
+				await this._client.connect();
+				this.setState('info.connection', true, true);
+			} catch (err) {
+				this.log.error(`Reconnect failed: ${err.message}`);
+				return;
+			}
+		}
 
-		// examples for the checkPassword/checkGroup functions
-		const pwdResult = await this.checkPasswordAsync('admin', 'iobroker');
-		this.log.info(`check user admin pw iobroker: ${pwdResult}`);
-
-		const groupResult = await this.checkGroupAsync('admin', 'admin');
-		this.log.info(`check group user admin group admin: ${groupResult}`);
+		try {
+			const data = await this._client.fetchAll();
+			await this._updateStates(data);
+		} catch (err) {
+			this.setState('info.connection', false, true);
+			this.log.error(`Poll failed: ${err.message}`);
+			this._client.disconnect();
+		}
 	}
 
 	/**
-	 * Is called when adapter shuts down - callback has to be called under any circumstances!
-	 *
-	 * @param {() => void} callback - Callback function
+	 * @param {import('./lib/truenas-client').TrueNasData} data
 	 */
+	async _updateStates(data) {
+		const { systemInfo, pools, diskList, diskTemps, datasets, cpuTempResult } = data;
+
+		// --- system ---
+		await this._ensureChannel('system', 'System');
+		await this._setStateObj('system.hostname', 'Hostname', 'string', 'info.ip', systemInfo.hostname);
+		await this._setStateObj('system.version', 'TrueNAS version', 'string', 'text', systemInfo.version);
+		await this._setStateObj(
+			'system.uptime',
+			'Uptime (seconds)',
+			'number',
+			'value',
+			Math.round(systemInfo.uptime_seconds),
+		);
+
+		if (cpuTempResult && Array.isArray(cpuTempResult) && cpuTempResult[0]?.aggregations) {
+			const agg = cpuTempResult[0].aggregations;
+			if (agg.mean?.cpu != null) {
+				await this._setStateObj(
+					'system.cpuTemp',
+					'CPU temperature (°C)',
+					'number',
+					'value.temperature',
+					Math.round(agg.mean.cpu),
+				);
+			}
+			for (const [key, val] of Object.entries(agg.mean || {})) {
+				if (key.startsWith('cpu') && key !== 'cpu' && val != null) {
+					await this._setStateObj(
+						`system.cpuTemp_${key}`,
+						`CPU ${key} temperature (°C)`,
+						'number',
+						'value.temperature',
+						Math.round(val),
+					);
+				}
+			}
+		}
+
+		// --- pools ---
+		await this._ensureChannel('pools', 'Pools');
+		for (const pool of pools) {
+			const safeId = this._safeId(pool.name);
+			await this._ensureChannel(`pools.${safeId}`, pool.name);
+			await this._setStateObj(`pools.${safeId}.name`, 'Pool name', 'string', 'text', pool.name);
+			await this._setStateObj(`pools.${safeId}.healthy`, 'Pool healthy', 'boolean', 'indicator', pool.healthy);
+			await this._setStateObj(`pools.${safeId}.status`, 'Pool status', 'string', 'text', pool.status);
+			await this._setStateObj(
+				`pools.${safeId}.statusCode`,
+				'Pool status code',
+				'string',
+				'text',
+				pool.status_code || '',
+			);
+			await this._setStateObj(`pools.${safeId}.size`, 'Pool size (bytes)', 'number', 'value.capacity', pool.size);
+			await this._setStateObj(
+				`pools.${safeId}.allocated`,
+				'Allocated (bytes)',
+				'number',
+				'value.capacity',
+				pool.allocated,
+			);
+			await this._setStateObj(`pools.${safeId}.free`, 'Free (bytes)', 'number', 'value.capacity', pool.free);
+		}
+
+		// --- datasets (top-level per pool only) ---
+		await this._ensureChannel('datasets', 'Datasets');
+		for (const ds of datasets) {
+			const safeId = this._safeId(ds.id || ds.name);
+			await this._ensureChannel(`datasets.${safeId}`, ds.id || ds.name);
+			const used = ds.used?.parsed ?? ds.used?.value ?? null;
+			const avail = ds.available?.parsed ?? ds.available?.value ?? null;
+			if (used != null) {
+				await this._setStateObj(`datasets.${safeId}.used`, 'Used (bytes)', 'number', 'value.capacity', used);
+			}
+			if (avail != null) {
+				await this._setStateObj(
+					`datasets.${safeId}.available`,
+					'Available (bytes)',
+					'number',
+					'value.capacity',
+					avail,
+				);
+			}
+		}
+
+		// --- disks ---
+		await this._ensureChannel('disks', 'Disks');
+		for (const disk of diskList) {
+			if (disk.devname.startsWith('mmcblk')) {
+				continue;
+			}
+			const safeId = this._safeId(disk.devname);
+			await this._ensureChannel(`disks.${safeId}`, disk.devname);
+			await this._setStateObj(`disks.${safeId}.model`, 'Model', 'string', 'text', disk.model || '');
+			await this._setStateObj(`disks.${safeId}.serial`, 'Serial', 'string', 'text', disk.serial || '');
+			await this._setStateObj(`disks.${safeId}.type`, 'Type', 'string', 'text', disk.type || '');
+			await this._setStateObj(`disks.${safeId}.pool`, 'Pool assignment', 'string', 'text', disk.pool || '');
+
+			const tempEntry = diskTemps[disk.devname];
+			if (Array.isArray(tempEntry)) {
+				const [temp, threshold] = tempEntry;
+				if (temp != null) {
+					await this._setStateObj(
+						`disks.${safeId}.temperature`,
+						'Temperature (°C)',
+						'number',
+						'value.temperature',
+						temp,
+					);
+				}
+				if (threshold != null) {
+					await this._setStateObj(
+						`disks.${safeId}.temperatureMax`,
+						'Critical temperature (°C)',
+						'number',
+						'value.temperature',
+						threshold,
+					);
+				}
+			} else if (tempEntry != null) {
+				await this._setStateObj(
+					`disks.${safeId}.temperature`,
+					'Temperature (°C)',
+					'number',
+					'value.temperature',
+					tempEntry,
+				);
+			}
+		}
+	}
+
+	/**
+	 * Ensure a channel object exists.
+	 *
+	 * @param {string} id
+	 * @param {string} name
+	 */
+	async _ensureChannel(id, name) {
+		await this.extendObjectAsync(id, {
+			type: 'channel',
+			common: { name },
+			native: {},
+		});
+	}
+
+	/**
+	 * Ensure state object exists (extendObject) and set its value.
+	 *
+	 * @param {string} id
+	 * @param {string} name
+	 * @param {'string'|'number'|'boolean'} type
+	 * @param {string} role
+	 * @param {*} val
+	 */
+	async _setStateObj(id, name, type, role, val) {
+		await this.extendObjectAsync(id, {
+			type: 'state',
+			common: { name, type, role, read: true, write: false },
+			native: {},
+		});
+		await this.setStateAsync(id, { val, ack: true });
+	}
+
+	/**
+	 * Convert a raw name to a safe ioBroker state ID segment.
+	 *
+	 * @param {string} name
+	 * @returns {string}
+	 */
+	_safeId(name) {
+		return name.replace(/[^a-zA-Z0-9_-]/g, '_');
+	}
+
 	onUnload(callback) {
 		try {
-			// Here you must clear all timeouts or intervals that may still be active
-			// clearTimeout(timeout1);
-			// clearTimeout(timeout2);
-			// ...
-			// clearInterval(interval1);
-
-			callback();
-		} catch (error) {
-			this.log.error(`Error during unloading: ${error.message}`);
-			callback();
-		}
-	}
-
-	// If you need to react to object changes, uncomment the following block and the corresponding line in the constructor.
-	// You also need to subscribe to the objects with `this.subscribeObjects`, similar to `this.subscribeStates`.
-	// /**
-	//  * Is called if a subscribed object changes
-	//  * @param {string} id
-	//  * @param {ioBroker.Object | null | undefined} obj
-	//  */
-	// onObjectChange(id, obj) {
-	// 	if (obj) {
-	// 		// The object was changed
-	// 		this.log.info(`object ${id} changed: ${JSON.stringify(obj)}`);
-	// 	} else {
-	// 		// The object was deleted
-	// 		this.log.info(`object ${id} deleted`);
-	// 	}
-	// }
-
-	/**
-	 * Is called if a subscribed state changes
-	 *
-	 * @param {string} id - State ID
-	 * @param {ioBroker.State | null | undefined} state - State object
-	 */
-	onStateChange(id, state) {
-		if (state) {
-			// The state was changed
-			this.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
-
-			if (state.ack === false) {
-				// This is a command from the user (e.g., from the UI or other adapter)
-				// and should be processed by the adapter
-				this.log.info(`User command received for ${id}: ${state.val}`);
-
-				// TODO: Add your control logic here
+			if (this._pollTimer) {
+				this.clearInterval(this._pollTimer);
+				this._pollTimer = null;
 			}
-		} else {
-			// The object was deleted or the state value has expired
-			this.log.info(`state ${id} deleted`);
+			if (this._client) {
+				this._client.disconnect();
+				this._client = null;
+			}
+			this.setState('info.connection', false, true);
+			callback();
+		} catch {
+			callback();
 		}
 	}
-	// If you need to accept messages in your adapter, uncomment the following block and the corresponding line in the constructor.
-	// /**
-	//  * Some message was sent to this instance over message box. Used by email, pushover, text2speech, ...
-	//  * Using this method requires "common.messagebox" property to be set to true in io-package.json
-	//  * @param {ioBroker.Message} obj
-	//  */
-	// onMessage(obj) {
-	// 	if (typeof obj === 'object' && obj.message) {
-	// 		if (obj.command === 'send') {
-	// 			// e.g. send email or pushover or whatever
-	// 			this.log.info('send command');
-
-	// 			// Send response in callback if required
-	// 			if (obj.callback) this.sendTo(obj.from, obj.command, 'Message received', obj.callback);
-	// 		}
-	// 	}
-	// }
 }
 
 if (require.main !== module) {
-	// Export the constructor in compact mode
-	/**
-	 * @param {Partial<utils.AdapterOptions>} [options] - Adapter options
-	 */
-	module.exports = (options) => new Truenas(options);
+	module.exports = options => new Truenas(options);
 } else {
-	// otherwise start the instance directly
 	new Truenas();
 }
