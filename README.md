@@ -112,7 +112,9 @@ One channel per disk (eMMC/boot media excluded).
 
 ### User logins (`truenas.0.users.*`)
 
-Populated from the TrueNAS audit log (successful `AUTHENTICATION` events since 1 January of the current year, up to 500 most recent records per poll).
+Populated from the TrueNAS audit log (successful `AUTHENTICATION` events since 1 January of the current year), covering both WebUI/API logins **and SMB share logins** — so a user that only ever connects over SMB (e.g. an app mounting a share, never touching the TrueNAS WebUI) still shows up here.
+
+Queried per real (non-builtin) local user rather than as one global "most recent N" query: TrueNAS doesn't allow combining the `MIDDLEWARE` (WebUI/API) and `SMB` audit databases in a single request, and a shared global limit would let a single high-frequency account (e.g. a sync client re-authenticating every few seconds over SMB) crowd out users who log in rarely. Per-user queries are batched at a concurrency of 10 to stay under TrueNAS's limit of 20 concurrent API calls per session.
 
 #### Per user (`truenas.0.users.<username>.*`)
 
@@ -148,6 +150,7 @@ Counts of **distinct users** who logged in at least once within the time window.
 
 ### 0.0.1 (2026-10-05)
 * Initial release: system info, pools, datasets, disks, CPU temp/load/usage, user login tracking
+* User logins now also cover SMB share logins, not just WebUI/API (queried per user to avoid high-frequency accounts crowding out infrequent ones)
 
 ---
 
