@@ -139,6 +139,13 @@ class Truenas extends utils.Adapter {
 			if (availText != null) {
 				await this._setStateObj(`datasets.${safeId}.availableText`, 'Available (formatted)', 'string', 'text', availText);
 			}
+			if (usedBytes != null && availBytes != null) {
+				const total = usedBytes + availBytes;
+				if (total > 0) {
+					await this._setStateObj(`datasets.${safeId}.usedPercent`, 'Used %', 'number', 'value.capacity', Math.round(usedBytes / total * 100), '%');
+					await this._setStateObj(`datasets.${safeId}.freePercent`, 'Free %', 'number', 'value.capacity', Math.round(availBytes / total * 100), '%');
+				}
+			}
 		}
 
 		// --- disks ---
