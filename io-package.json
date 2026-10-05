@@ -1,8 +1,21 @@
 {
 	"common": {
 		"name": "truenas",
-		"version": "0.0.1",
+		"version": "0.5.0",
 		"news": {
+			"0.5.0": {
+				"en": "First tagged release: system/pool/dataset/disk monitoring, CPU temp/load/usage, user login tracking (WebUI/API and SMB)",
+				"de": "Erstes getaggtes Release: System-/Pool-/Dataset-/Disk-Monitoring, CPU-Temperatur/-Last/-Auslastung, Benutzer-Login-Tracking (WebUI/API und SMB)",
+				"ru": "First tagged release: system/pool/dataset/disk monitoring, CPU temp/load/usage, user login tracking (WebUI/API and SMB)",
+				"pt": "First tagged release: system/pool/dataset/disk monitoring, CPU temp/load/usage, user login tracking (WebUI/API and SMB)",
+				"nl": "First tagged release: system/pool/dataset/disk monitoring, CPU temp/load/usage, user login tracking (WebUI/API and SMB)",
+				"fr": "First tagged release: system/pool/dataset/disk monitoring, CPU temp/load/usage, user login tracking (WebUI/API and SMB)",
+				"it": "First tagged release: system/pool/dataset/disk monitoring, CPU temp/load/usage, user login tracking (WebUI/API and SMB)",
+				"es": "First tagged release: system/pool/dataset/disk monitoring, CPU temp/load/usage, user login tracking (WebUI/API and SMB)",
+				"pl": "First tagged release: system/pool/dataset/disk monitoring, CPU temp/load/usage, user login tracking (WebUI/API and SMB)",
+				"uk": "First tagged release: system/pool/dataset/disk monitoring, CPU temp/load/usage, user login tracking (WebUI/API and SMB)",
+				"zh-cn": "First tagged release: system/pool/dataset/disk monitoring, CPU temp/load/usage, user login tracking (WebUI/API and SMB)"
+			},
 			"0.0.1": {
 				"en": "initial release",
 				"de": "Erstveröffentlichung",

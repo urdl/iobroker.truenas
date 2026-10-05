@@ -148,6 +148,9 @@ Counts of **distinct users** who logged in at least once within the time window.
 
 ## Changelog
 
+### 0.5.0 (2026-10-06)
+* First tagged GitHub release — no functional changes since 0.0.1 below
+
 ### 0.0.1 (2026-10-05)
 * Initial release: system info, pools, datasets, disks, CPU temp/load/usage, user login tracking
 * User logins now also cover SMB share logins, not just WebUI/API (queried per user to avoid high-frequency accounts crowding out infrequent ones)
