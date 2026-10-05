@@ -80,13 +80,19 @@ class Truenas extends utils.Adapter {
 	 * @param {import('./lib/truenas-client').TrueNasData} data
 	 */
 	async _updateStates(data) {
-		const { systemInfo, pools, diskList, diskTemps, datasets, cpuTempResult } = data;
+		const { systemInfo, pools, diskList, diskTemps, datasets, cpuTempResult, cpuUsageResult, userLogins } = data;
 
 		// --- system ---
 		await this._ensureChannel('system', 'System');
 		await this._setStateObj('system.hostname', 'Hostname', 'string', 'info.ip', systemInfo.hostname);
 		await this._setStateObj('system.version', 'TrueNAS version', 'string', 'text', systemInfo.version);
 		await this._setStateObj('system.uptime', 'Uptime', 'number', 'value', Math.round(systemInfo.uptime_seconds), 's');
+
+		if (Array.isArray(systemInfo.loadavg) && systemInfo.loadavg.length >= 3) {
+			await this._setStateObj('system.loadavg1', 'Load average 1 min', 'number', 'value', Math.round(systemInfo.loadavg[0] * 100) / 100);
+			await this._setStateObj('system.loadavg5', 'Load average 5 min', 'number', 'value', Math.round(systemInfo.loadavg[1] * 100) / 100);
+			await this._setStateObj('system.loadavg15', 'Load average 15 min', 'number', 'value', Math.round(systemInfo.loadavg[2] * 100) / 100);
+		}
 
 		if (cpuTempResult && Array.isArray(cpuTempResult) && cpuTempResult[0]?.aggregations) {
 			const agg = cpuTempResult[0].aggregations;
@@ -96,6 +102,24 @@ class Truenas extends utils.Adapter {
 			for (const [key, val] of Object.entries(agg.mean || {})) {
 				if (key.startsWith('cpu') && key !== 'cpu' && val != null) {
 					await this._setStateObj(`system.cpuTemp_${key}`, `CPU ${key} temperature`, 'number', 'value.temperature', Math.round(val), '°C');
+				}
+			}
+		}
+
+		if (cpuUsageResult && Array.isArray(cpuUsageResult) && cpuUsageResult[0]?.legend) {
+			const { legend, data } = cpuUsageResult[0];
+			// last row = most recent data point
+			const lastRow = Array.isArray(data) && data.length ? data[data.length - 1] : null;
+			if (lastRow) {
+				for (let i = 1; i < legend.length; i++) {
+					const key = legend[i]; // 'cpu', 'cpu0', 'cpu1', ...
+					const val = lastRow[i];
+					if (val == null) continue;
+					if (key === 'cpu') {
+						await this._setStateObj('system.cpuUsage', 'CPU usage', 'number', 'value', Math.round(val), '%');
+					} else {
+						await this._setStateObj(`system.cpuUsage_${key}`, `CPU ${key} usage`, 'number', 'value', Math.round(val), '%');
+					}
 				}
 			}
 		}
@@ -146,6 +170,62 @@ class Truenas extends utils.Adapter {
 					await this._setStateObj(`datasets.${safeId}.freePercent`, 'Free %', 'number', 'value.capacity', Math.round(availBytes / total * 100), '%');
 				}
 			}
+		}
+
+		// --- users ---
+		if (Array.isArray(userLogins) && userLogins.length > 0) {
+			await this._ensureChannel('users', 'Users');
+			await this._ensureChannel('users.activeCount', 'Active Users Count');
+
+			const now = Date.now();
+			const today = new Date();
+			const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
+			const start6months = new Date(today.getFullYear(), today.getMonth() - 6, 1).getTime();
+			const startOfYear = new Date(today.getFullYear(), 0, 1).getTime();
+
+			// newest-first → first occurrence per user = last login
+			const lastLoginByUser = {};
+			for (const rec of userLogins) {
+				if (!lastLoginByUser[rec.username]) {
+					lastLoginByUser[rec.username] = {
+						ts: rec.message_timestamp * 1000,
+						address: rec.address || '',
+					};
+				}
+			}
+
+			for (const [username, info] of Object.entries(lastLoginByUser)) {
+				const safeId = this._safeId(username);
+				await this._ensureChannel(`users.${safeId}`, username);
+				await this._setStateObj(`users.${safeId}.lastLogin`, 'Last login', 'string', 'text', new Date(info.ts).toISOString());
+				await this._setStateObj(`users.${safeId}.lastLoginAddress`, 'Last login address', 'string', 'text', info.address);
+			}
+
+			const sets = {
+				last5min: new Set(),
+				last1h: new Set(),
+				last24h: new Set(),
+				thisMonth: new Set(),
+				last6months: new Set(),
+				thisYear: new Set(),
+			};
+			for (const rec of userLogins) {
+				const ts = rec.message_timestamp * 1000;
+				const u = rec.username;
+				if (now - ts <= 5 * 60 * 1000) sets.last5min.add(u);
+				if (now - ts <= 60 * 60 * 1000) sets.last1h.add(u);
+				if (now - ts <= 24 * 60 * 60 * 1000) sets.last24h.add(u);
+				if (ts >= startOfMonth) sets.thisMonth.add(u);
+				if (ts >= start6months) sets.last6months.add(u);
+				if (ts >= startOfYear) sets.thisYear.add(u);
+			}
+
+			await this._setStateObj('users.activeCount.last5min', 'Unique users last 5 min', 'number', 'value', sets.last5min.size);
+			await this._setStateObj('users.activeCount.last1h', 'Unique users last 1 h', 'number', 'value', sets.last1h.size);
+			await this._setStateObj('users.activeCount.last24h', 'Unique users last 24 h', 'number', 'value', sets.last24h.size);
+			await this._setStateObj('users.activeCount.thisMonth', 'Unique users this month', 'number', 'value', sets.thisMonth.size);
+			await this._setStateObj('users.activeCount.last6months', 'Unique users last 6 months', 'number', 'value', sets.last6months.size);
+			await this._setStateObj('users.activeCount.thisYear', 'Unique users this year', 'number', 'value', sets.thisYear.size);
 		}
 
 		// --- disks ---

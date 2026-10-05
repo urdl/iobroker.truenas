@@ -1,134 +1,158 @@
 ![Logo](admin/truenas.png)
+
 # ioBroker.truenas
 
-[![NPM version](https://img.shields.io/npm/v/iobroker.truenas.svg)](https://www.npmjs.com/package/iobroker.truenas)
-[![Downloads](https://img.shields.io/npm/dm/iobroker.truenas.svg)](https://www.npmjs.com/package/iobroker.truenas)
-![Number of Installations](https://iobroker.live/badges/truenas-installed.svg)
-![Current version in stable repository](https://iobroker.live/badges/truenas-stable.svg)
+Monitor **TrueNAS SCALE** devices from ioBroker via the official JSON-RPC 2.0 WebSocket API.
 
-[![NPM](https://nodei.co/npm/iobroker.truenas.png?downloads=true)](https://nodei.co/npm/iobroker.truenas/)
+Polls system info, pool health, dataset usage, disk temperatures (SMART), CPU load/temperature, and user login history — no SSH, no scraping, no third-party dependencies beyond the official `@truenas/api-client`.
 
-**Tests:** ![Test and Release](https://github.com/urdl/ioBroker.truenas/workflows/Test%20and%20Release/badge.svg)
+---
 
-## truenas adapter for ioBroker
+## Requirements
 
-Monitor TrueNAS SCALE devices via the official JSON-RPC 2.0 WebSocket API
+| Component | Minimum version |
+|---|---|
+| TrueNAS SCALE | 24.x or newer (tested: 25.10.x) |
+| ioBroker js-controller | 6.0.11 |
+| ioBroker admin adapter | 7.0.23 |
+| Node.js | 18 |
 
-## Developer manual
-This section is intended for the developer. It can be deleted later.
+---
 
-### DISCLAIMER
+## TrueNAS setup
 
-Please make sure that you consider copyrights and trademarks when you use names or logos of a company and add a disclaimer to your README.
-You can check other adapters for examples or ask in the developer community. Using a name or logo of a company without permission may cause legal problems for you.
+### Create a dedicated user (recommended)
 
-### Getting started
+1. TrueNAS Web UI → **Credentials → Local Users → Add**
+2. Username: e.g. `iobroker`, shell: `nologin`
+3. Assign role **Sharing Admin** (gives read access to pools, datasets, disks, audit log)
+4. Save
 
-You are almost done, only a few steps left:
-1. Create a new repository on GitHub with the name `ioBroker.truenas`
-1. Initialize the current folder as a new git repository:  
-	```bash
-	git init -b main
-	git add .
-	git commit -m "Initial commit"
-	```
-1. Link your local repository with the one on GitHub:  
-	```bash
-	git remote add origin https://github.com/urdl/ioBroker.truenas
-	```
+### Create an API Key
 
-1. Push all files to the GitHub repo:  
-	```bash
-	git push origin main
-	```
-1. Add a new secret under https://github.com/urdl/ioBroker.truenas/settings/secrets. It must be named `AUTO_MERGE_TOKEN` and contain a personal access token with push access to the repository, e.g. yours. You can create a new token under https://github.com/settings/tokens.
+1. TrueNAS Web UI → **API Keys → Add**
+2. Name: `iobroker`, assign to the user created above
+3. Copy the generated key — it is shown only once
 
-1. Head over to [main.js](main.js) and start programming!
+> If you use the built-in `root` / `truenas_admin` account instead of a dedicated user,
+> everything works but is not recommended for least-privilege operation.
 
-### Best Practices
-We've collected some [best practices](https://github.com/ioBroker/ioBroker.repositories#development-and-coding-best-practices) regarding ioBroker development and coding in general. If you're new to ioBroker or Node.js, you should
-check them out. If you're already experienced, you should also take a look at them - you might learn something new :)
+---
 
-### State Roles
-When creating state objects, it is important to use the correct role for the state. The role defines how the state should be interpreted by visualizations and other adapters. For a list of available roles and their meanings, please refer to the [state roles documentation](https://www.iobroker.net/#en/documentation/dev/stateroles.md).
+## Adapter configuration
 
-**Important:** Do not invent your own custom role names. If you need a role that is not part of the official list, please contact the ioBroker developer community for guidance and discussion about adding new roles.
+| Field | Description |
+|---|---|
+| **Host** | TrueNAS hostname or IP address — without `https://` prefix (e.g. `truenas.local` or `192.168.1.115`) |
+| **Username** | TrueNAS username that owns the API key (default: `root`) |
+| **API Key** | The API key generated in TrueNAS (stored encrypted) |
+| **Poll interval** | How often to fetch data in seconds (min 10, default 60) |
+| **Allow self-signed certificates** | Enable when TrueNAS uses a self-signed TLS certificate (typical for home installations) |
 
-### Scripts in `package.json`
-Several npm scripts are predefined for your convenience. You can run them using `npm run <scriptname>`
-| Script name | Description |
-|-------------|-------------|
-| `test:js` | Executes the tests you defined in `*.test.js` files. |
-| `test:package` | Ensures your `package.json` and `io-package.json` are valid. |
-| `test:integration` | Tests the adapter startup with an actual instance of ioBroker. |
-| `test` | Performs a minimal test run on package files and your tests. |
-| `coverage` | Generates code coverage using your test files. |
-| `lint` | Runs `ESLint` to check your code for formatting errors and potential bugs. |
-| `translate` | Translates texts in your adapter to all required languages, see [`@iobroker/adapter-dev`](https://github.com/ioBroker/adapter-dev#manage-translations) for more details. |
-| `release` | Creates a new release, see [`@alcalzone/release-script`](https://github.com/AlCalzone/release-script#usage) for more details. |
+---
 
-### Writing tests
-When done right, testing code is invaluable, because it gives you the 
-confidence to change your code while knowing exactly if and when 
-something breaks. A good read on the topic of test-driven development 
-is https://hackernoon.com/introduction-to-test-driven-development-tdd-61a13bc92d92. 
-Although writing tests before the code might seem strange at first, but it has very 
-clear upsides.
+## Collected states
 
-The template provides you with basic tests for the adapter startup and package files.
-It is recommended that you add your own tests into the mix.
+### System (`truenas.0.system.*`)
 
-### Publishing the adapter
-Using GitHub Actions, you can enable automatic releases on npm whenever you push a new git tag that matches the form 
-`v<major>.<minor>.<patch>`. We **strongly recommend** that you do. The necessary steps are described in `.github/workflows/test-and-release.yml`.
+| State | Type | Unit | Description |
+|---|---|---|---|
+| `hostname` | string | — | System hostname |
+| `version` | string | — | TrueNAS version string |
+| `uptime` | number | s | System uptime in seconds |
+| `loadavg1` | number | — | CPU load average (1 min) |
+| `loadavg5` | number | — | CPU load average (5 min) |
+| `loadavg15` | number | — | CPU load average (15 min) |
+| `cpuTemp` | number | °C | Mean CPU temperature (last hour) |
+| `cpuTemp_cpu0` … `cpuTemp_cpuN` | number | °C | Per-core temperature |
+| `cpuUsage` | number | % | Overall CPU utilisation (most recent sample) |
+| `cpuUsage_cpu0` … `cpuUsage_cpuN` | number | % | Per-core CPU utilisation |
 
-Since you installed the release script, you can create a new
-release simply by calling:
-```bash
-npm run release
-```
-Additional command line options for the release script are explained in the
-[release-script documentation](https://github.com/AlCalzone/release-script#command-line).
+### Pools (`truenas.0.pools.<poolname>.*`)
 
-To get your adapter released in ioBroker, please refer to the documentation 
-of [ioBroker.repositories](https://github.com/ioBroker/ioBroker.repositories#requirements-for-adapter-to-get-added-to-the-latest-repository).
+One channel per ZFS pool.
 
-### Test the adapter manually on a local ioBroker installation
-In order to install the adapter locally without publishing, the following steps are recommended:
-1. Create a GitHub repository for your adapter if you haven't already
-1. Push your code to the GitHub repository
-1. Use the ioBroker Admin interface or command line to install the adapter from GitHub:
-	* **Via Admin UI**: Go to the "Adapters" tab, click on "Custom Install" (GitHub icon), and enter your repository URL:
-		```
-		https://github.com/urdl/ioBroker.truenas
-		```
-		You can also install from a specific branch by adding `#branchname` at the end:
-		```
-		https://github.com/urdl/ioBroker.truenas#dev
-		```
-	* **Via Command Line**: Install using the `iob` command:
-		```bash
-		iob url https://github.com/urdl/ioBroker.truenas
-		```
-		Or from a specific branch:
-		```bash
-		iob url https://github.com/urdl/ioBroker.truenas#dev
-		```
+| State | Type | Unit | Description |
+|---|---|---|---|
+| `name` | string | — | Pool name |
+| `healthy` | boolean | — | `true` = pool is healthy |
+| `status` | string | — | Pool status (ONLINE, DEGRADED, …) |
+| `statusCode` | string | — | Status code detail |
+| `size` | number | B | Total pool size |
+| `allocated` | number | B | Used space |
+| `free` | number | B | Free space |
+| `usedPercent` | number | % | Used space as percentage |
+| `freePercent` | number | % | Free space as percentage |
 
-For later updates:
-1. Push your changes to GitHub
-1. Repeat the installation steps above (via Admin UI or `iob url` command) to update the adapter
+### Datasets (`truenas.0.datasets.<datasetid>.*`)
+
+One channel per ZFS dataset (flat list, all datasets).
+
+| State | Type | Unit | Description |
+|---|---|---|---|
+| `used` | number | B | Used bytes |
+| `available` | number | B | Available bytes |
+| `usedText` | string | — | Used space, human-readable (e.g. `1.23 GiB`) |
+| `availableText` | string | — | Available space, human-readable |
+| `usedPercent` | number | % | Used as percentage of (used + available) |
+| `freePercent` | number | % | Available as percentage of (used + available) |
+
+### Disks (`truenas.0.disks.<devname>.*`)
+
+One channel per disk (eMMC/boot media excluded).
+
+| State | Type | Unit | Description |
+|---|---|---|---|
+| `model` | string | — | Disk model |
+| `serial` | string | — | Serial number |
+| `type` | string | — | Disk type (HDD, SSD, …) |
+| `pool` | string | — | Pool the disk is assigned to |
+| `temperature` | number | °C | Current SMART temperature |
+| `temperatureMax` | number | °C | Critical temperature threshold |
+
+### User logins (`truenas.0.users.*`)
+
+Populated from the TrueNAS audit log (successful `AUTHENTICATION` events since 1 January of the current year, up to 500 most recent records per poll).
+
+#### Per user (`truenas.0.users.<username>.*`)
+
+New users are added automatically on the next poll after their first login.
+
+| State | Type | Description |
+|---|---|---|
+| `lastLogin` | string | ISO-8601 timestamp of the most recent successful login |
+| `lastLoginAddress` | string | IP address of the most recent login |
+
+#### Active user counts (`truenas.0.users.activeCount.*`)
+
+Counts of **distinct users** who logged in at least once within the time window.
+
+| State | Window |
+|---|---|
+| `last5min` | Last 5 minutes |
+| `last1h` | Last 60 minutes |
+| `last24h` | Last 24 hours |
+| `thisMonth` | Since 1st of the current month |
+| `last6months` | Since 6 months ago (1st of that month) |
+| `thisYear` | Since 1 January of the current year |
+
+---
+
+## Connection indicator
+
+`truenas.0.info.connection` — `true` while the adapter is connected to TrueNAS, `false` otherwise (also set to `false` on adapter stop or failed poll).
+
+---
 
 ## Changelog
-<!--
-	Placeholder for the next version (at the beginning of the line):
-	### **WORK IN PROGRESS**
--->
 
-### **WORK IN PROGRESS**
-* (U.R.D.L) initial release
+### 0.0.1 (2026-10-05)
+* Initial release: system info, pools, datasets, disks, CPU temp/load/usage, user login tracking
+
+---
 
 ## License
+
 MIT License
 
 Copyright (c) 2026 U.R.D.L <claude@preindl.at>
