@@ -11,7 +11,7 @@
 			"md": 6,
 			"lg": 6,
 			"xl": 4,
-			"validator": "^[^\\s]+$",
+			"validator": "!!data.host && !/\\s/.test(data.host)",
 			"validatorErrorText": "hostRequired"
 		},
 		"username": {
