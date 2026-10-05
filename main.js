@@ -86,34 +86,16 @@ class Truenas extends utils.Adapter {
 		await this._ensureChannel('system', 'System');
 		await this._setStateObj('system.hostname', 'Hostname', 'string', 'info.ip', systemInfo.hostname);
 		await this._setStateObj('system.version', 'TrueNAS version', 'string', 'text', systemInfo.version);
-		await this._setStateObj(
-			'system.uptime',
-			'Uptime (seconds)',
-			'number',
-			'value',
-			Math.round(systemInfo.uptime_seconds),
-		);
+		await this._setStateObj('system.uptime', 'Uptime', 'number', 'value', Math.round(systemInfo.uptime_seconds), 's');
 
 		if (cpuTempResult && Array.isArray(cpuTempResult) && cpuTempResult[0]?.aggregations) {
 			const agg = cpuTempResult[0].aggregations;
 			if (agg.mean?.cpu != null) {
-				await this._setStateObj(
-					'system.cpuTemp',
-					'CPU temperature (°C)',
-					'number',
-					'value.temperature',
-					Math.round(agg.mean.cpu),
-				);
+				await this._setStateObj('system.cpuTemp', 'CPU temperature', 'number', 'value.temperature', Math.round(agg.mean.cpu), '°C');
 			}
 			for (const [key, val] of Object.entries(agg.mean || {})) {
 				if (key.startsWith('cpu') && key !== 'cpu' && val != null) {
-					await this._setStateObj(
-						`system.cpuTemp_${key}`,
-						`CPU ${key} temperature (°C)`,
-						'number',
-						'value.temperature',
-						Math.round(val),
-					);
+					await this._setStateObj(`system.cpuTemp_${key}`, `CPU ${key} temperature`, 'number', 'value.temperature', Math.round(val), '°C');
 				}
 			}
 		}
@@ -126,22 +108,14 @@ class Truenas extends utils.Adapter {
 			await this._setStateObj(`pools.${safeId}.name`, 'Pool name', 'string', 'text', pool.name);
 			await this._setStateObj(`pools.${safeId}.healthy`, 'Pool healthy', 'boolean', 'indicator', pool.healthy);
 			await this._setStateObj(`pools.${safeId}.status`, 'Pool status', 'string', 'text', pool.status);
-			await this._setStateObj(
-				`pools.${safeId}.statusCode`,
-				'Pool status code',
-				'string',
-				'text',
-				pool.status_code || '',
-			);
-			await this._setStateObj(`pools.${safeId}.size`, 'Pool size (bytes)', 'number', 'value.capacity', pool.size);
-			await this._setStateObj(
-				`pools.${safeId}.allocated`,
-				'Allocated (bytes)',
-				'number',
-				'value.capacity',
-				pool.allocated,
-			);
-			await this._setStateObj(`pools.${safeId}.free`, 'Free (bytes)', 'number', 'value.capacity', pool.free);
+			await this._setStateObj(`pools.${safeId}.statusCode`, 'Pool status code', 'string', 'text', pool.status_code || '');
+			await this._setStateObj(`pools.${safeId}.size`, 'Pool size', 'number', 'value.capacity', pool.size, 'B');
+			await this._setStateObj(`pools.${safeId}.allocated`, 'Allocated', 'number', 'value.capacity', pool.allocated, 'B');
+			await this._setStateObj(`pools.${safeId}.free`, 'Free', 'number', 'value.capacity', pool.free, 'B');
+			if (pool.size > 0) {
+				await this._setStateObj(`pools.${safeId}.usedPercent`, 'Used %', 'number', 'value.capacity', Math.round(pool.allocated / pool.size * 100), '%');
+				await this._setStateObj(`pools.${safeId}.freePercent`, 'Free %', 'number', 'value.capacity', Math.round(pool.free / pool.size * 100), '%');
+			}
 		}
 
 		// --- datasets (top-level per pool only) ---
@@ -149,19 +123,21 @@ class Truenas extends utils.Adapter {
 		for (const ds of datasets) {
 			const safeId = this._safeId(ds.id || ds.name);
 			await this._ensureChannel(`datasets.${safeId}`, ds.id || ds.name);
-			const used = ds.used?.parsed ?? ds.used?.value ?? null;
-			const avail = ds.available?.parsed ?? ds.available?.value ?? null;
-			if (used != null) {
-				await this._setStateObj(`datasets.${safeId}.used`, 'Used (bytes)', 'number', 'value.capacity', used);
+			const usedBytes = ds.used?.parsed ?? null;
+			const availBytes = ds.available?.parsed ?? null;
+			const usedText = ds.used?.value ?? null;
+			const availText = ds.available?.value ?? null;
+			if (usedBytes != null) {
+				await this._setStateObj(`datasets.${safeId}.used`, 'Used', 'number', 'value.capacity', usedBytes, 'B');
 			}
-			if (avail != null) {
-				await this._setStateObj(
-					`datasets.${safeId}.available`,
-					'Available (bytes)',
-					'number',
-					'value.capacity',
-					avail,
-				);
+			if (availBytes != null) {
+				await this._setStateObj(`datasets.${safeId}.available`, 'Available', 'number', 'value.capacity', availBytes, 'B');
+			}
+			if (usedText != null) {
+				await this._setStateObj(`datasets.${safeId}.usedText`, 'Used (formatted)', 'string', 'text', usedText);
+			}
+			if (availText != null) {
+				await this._setStateObj(`datasets.${safeId}.availableText`, 'Available (formatted)', 'string', 'text', availText);
 			}
 		}
 
@@ -182,31 +158,13 @@ class Truenas extends utils.Adapter {
 			if (Array.isArray(tempEntry)) {
 				const [temp, threshold] = tempEntry;
 				if (temp != null) {
-					await this._setStateObj(
-						`disks.${safeId}.temperature`,
-						'Temperature (°C)',
-						'number',
-						'value.temperature',
-						temp,
-					);
+					await this._setStateObj(`disks.${safeId}.temperature`, 'Temperature', 'number', 'value.temperature', temp, '°C');
 				}
 				if (threshold != null) {
-					await this._setStateObj(
-						`disks.${safeId}.temperatureMax`,
-						'Critical temperature (°C)',
-						'number',
-						'value.temperature',
-						threshold,
-					);
+					await this._setStateObj(`disks.${safeId}.temperatureMax`, 'Critical temperature', 'number', 'value.temperature', threshold, '°C');
 				}
 			} else if (tempEntry != null) {
-				await this._setStateObj(
-					`disks.${safeId}.temperature`,
-					'Temperature (°C)',
-					'number',
-					'value.temperature',
-					tempEntry,
-				);
+				await this._setStateObj(`disks.${safeId}.temperature`, 'Temperature', 'number', 'value.temperature', tempEntry, '°C');
 			}
 		}
 	}
@@ -234,10 +192,10 @@ class Truenas extends utils.Adapter {
 	 * @param {string} role
 	 * @param {*} val
 	 */
-	async _setStateObj(id, name, type, role, val) {
+	async _setStateObj(id, name, type, role, val, unit) {
 		await this.extendObjectAsync(id, {
 			type: 'state',
-			common: { name, type, role, read: true, write: false },
+			common: { name, type, role, read: true, write: false, ...(unit ? { unit } : {}) },
 			native: {},
 		});
 		await this.setStateAsync(id, { val, ack: true });
