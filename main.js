@@ -5,7 +5,7 @@ const TrueNasClient = require('./lib/truenas-client');
 
 class Truenas extends utils.Adapter {
 	/**
-	 * @param {Partial<utils.AdapterOptions>} [options]
+	 * @param {Partial<utils.AdapterOptions>} [options] adapter options
 	 */
 	constructor(options) {
 		super({ ...options, name: 'truenas' });
@@ -77,7 +77,7 @@ class Truenas extends utils.Adapter {
 	}
 
 	/**
-	 * @param {import('./lib/truenas-client').TrueNasData} data
+	 * @param {import('./lib/truenas-client').TrueNasData} data raw data fetched from TrueNAS
 	 */
 	async _updateStates(data) {
 		const { systemInfo, pools, diskList, diskTemps, datasets, cpuTempResult, cpuUsageResult, userLogins } = data;
@@ -86,22 +86,61 @@ class Truenas extends utils.Adapter {
 		await this._ensureChannel('system', 'System');
 		await this._setStateObj('system.hostname', 'Hostname', 'string', 'info.ip', systemInfo.hostname);
 		await this._setStateObj('system.version', 'TrueNAS version', 'string', 'text', systemInfo.version);
-		await this._setStateObj('system.uptime', 'Uptime', 'number', 'value', Math.round(systemInfo.uptime_seconds), 's');
+		await this._setStateObj(
+			'system.uptime',
+			'Uptime',
+			'number',
+			'value',
+			Math.round(systemInfo.uptime_seconds),
+			's',
+		);
 
 		if (Array.isArray(systemInfo.loadavg) && systemInfo.loadavg.length >= 3) {
-			await this._setStateObj('system.loadavg1', 'Load average 1 min', 'number', 'value', Math.round(systemInfo.loadavg[0] * 100) / 100);
-			await this._setStateObj('system.loadavg5', 'Load average 5 min', 'number', 'value', Math.round(systemInfo.loadavg[1] * 100) / 100);
-			await this._setStateObj('system.loadavg15', 'Load average 15 min', 'number', 'value', Math.round(systemInfo.loadavg[2] * 100) / 100);
+			await this._setStateObj(
+				'system.loadavg1',
+				'Load average 1 min',
+				'number',
+				'value',
+				Math.round(systemInfo.loadavg[0] * 100) / 100,
+			);
+			await this._setStateObj(
+				'system.loadavg5',
+				'Load average 5 min',
+				'number',
+				'value',
+				Math.round(systemInfo.loadavg[1] * 100) / 100,
+			);
+			await this._setStateObj(
+				'system.loadavg15',
+				'Load average 15 min',
+				'number',
+				'value',
+				Math.round(systemInfo.loadavg[2] * 100) / 100,
+			);
 		}
 
 		if (cpuTempResult && Array.isArray(cpuTempResult) && cpuTempResult[0]?.aggregations) {
 			const agg = cpuTempResult[0].aggregations;
 			if (agg.mean?.cpu != null) {
-				await this._setStateObj('system.cpuTemp', 'CPU temperature', 'number', 'value.temperature', Math.round(agg.mean.cpu), '°C');
+				await this._setStateObj(
+					'system.cpuTemp',
+					'CPU temperature',
+					'number',
+					'value.temperature',
+					Math.round(agg.mean.cpu),
+					'°C',
+				);
 			}
 			for (const [key, val] of Object.entries(agg.mean || {})) {
 				if (key.startsWith('cpu') && key !== 'cpu' && val != null) {
-					await this._setStateObj(`system.cpuTemp_${key}`, `CPU ${key} temperature`, 'number', 'value.temperature', Math.round(val), '°C');
+					await this._setStateObj(
+						`system.cpuTemp_${key}`,
+						`CPU ${key} temperature`,
+						'number',
+						'value.temperature',
+						Math.round(val),
+						'°C',
+					);
 				}
 			}
 		}
@@ -114,11 +153,27 @@ class Truenas extends utils.Adapter {
 				for (let i = 1; i < legend.length; i++) {
 					const key = legend[i]; // 'cpu', 'cpu0', 'cpu1', ...
 					const val = lastRow[i];
-					if (val == null) continue;
+					if (val == null) {
+						continue;
+					}
 					if (key === 'cpu') {
-						await this._setStateObj('system.cpuUsage', 'CPU usage', 'number', 'value', Math.round(val), '%');
+						await this._setStateObj(
+							'system.cpuUsage',
+							'CPU usage',
+							'number',
+							'value',
+							Math.round(val),
+							'%',
+						);
 					} else {
-						await this._setStateObj(`system.cpuUsage_${key}`, `CPU ${key} usage`, 'number', 'value', Math.round(val), '%');
+						await this._setStateObj(
+							`system.cpuUsage_${key}`,
+							`CPU ${key} usage`,
+							'number',
+							'value',
+							Math.round(val),
+							'%',
+						);
 					}
 				}
 			}
@@ -132,13 +187,40 @@ class Truenas extends utils.Adapter {
 			await this._setStateObj(`pools.${safeId}.name`, 'Pool name', 'string', 'text', pool.name);
 			await this._setStateObj(`pools.${safeId}.healthy`, 'Pool healthy', 'boolean', 'indicator', pool.healthy);
 			await this._setStateObj(`pools.${safeId}.status`, 'Pool status', 'string', 'text', pool.status);
-			await this._setStateObj(`pools.${safeId}.statusCode`, 'Pool status code', 'string', 'text', pool.status_code || '');
+			await this._setStateObj(
+				`pools.${safeId}.statusCode`,
+				'Pool status code',
+				'string',
+				'text',
+				pool.status_code || '',
+			);
 			await this._setStateObj(`pools.${safeId}.size`, 'Pool size', 'number', 'value.capacity', pool.size, 'B');
-			await this._setStateObj(`pools.${safeId}.allocated`, 'Allocated', 'number', 'value.capacity', pool.allocated, 'B');
+			await this._setStateObj(
+				`pools.${safeId}.allocated`,
+				'Allocated',
+				'number',
+				'value.capacity',
+				pool.allocated,
+				'B',
+			);
 			await this._setStateObj(`pools.${safeId}.free`, 'Free', 'number', 'value.capacity', pool.free, 'B');
 			if (pool.size > 0) {
-				await this._setStateObj(`pools.${safeId}.usedPercent`, 'Used %', 'number', 'value.capacity', Math.round(pool.allocated / pool.size * 100), '%');
-				await this._setStateObj(`pools.${safeId}.freePercent`, 'Free %', 'number', 'value.capacity', Math.round(pool.free / pool.size * 100), '%');
+				await this._setStateObj(
+					`pools.${safeId}.usedPercent`,
+					'Used %',
+					'number',
+					'value.capacity',
+					Math.round((pool.allocated / pool.size) * 100),
+					'%',
+				);
+				await this._setStateObj(
+					`pools.${safeId}.freePercent`,
+					'Free %',
+					'number',
+					'value.capacity',
+					Math.round((pool.free / pool.size) * 100),
+					'%',
+				);
 			}
 		}
 
@@ -155,19 +237,46 @@ class Truenas extends utils.Adapter {
 				await this._setStateObj(`datasets.${safeId}.used`, 'Used', 'number', 'value.capacity', usedBytes, 'B');
 			}
 			if (availBytes != null) {
-				await this._setStateObj(`datasets.${safeId}.available`, 'Available', 'number', 'value.capacity', availBytes, 'B');
+				await this._setStateObj(
+					`datasets.${safeId}.available`,
+					'Available',
+					'number',
+					'value.capacity',
+					availBytes,
+					'B',
+				);
 			}
 			if (usedText != null) {
 				await this._setStateObj(`datasets.${safeId}.usedText`, 'Used (formatted)', 'string', 'text', usedText);
 			}
 			if (availText != null) {
-				await this._setStateObj(`datasets.${safeId}.availableText`, 'Available (formatted)', 'string', 'text', availText);
+				await this._setStateObj(
+					`datasets.${safeId}.availableText`,
+					'Available (formatted)',
+					'string',
+					'text',
+					availText,
+				);
 			}
 			if (usedBytes != null && availBytes != null) {
 				const total = usedBytes + availBytes;
 				if (total > 0) {
-					await this._setStateObj(`datasets.${safeId}.usedPercent`, 'Used %', 'number', 'value.capacity', Math.round(usedBytes / total * 100), '%');
-					await this._setStateObj(`datasets.${safeId}.freePercent`, 'Free %', 'number', 'value.capacity', Math.round(availBytes / total * 100), '%');
+					await this._setStateObj(
+						`datasets.${safeId}.usedPercent`,
+						'Used %',
+						'number',
+						'value.capacity',
+						Math.round((usedBytes / total) * 100),
+						'%',
+					);
+					await this._setStateObj(
+						`datasets.${safeId}.freePercent`,
+						'Free %',
+						'number',
+						'value.capacity',
+						Math.round((availBytes / total) * 100),
+						'%',
+					);
 				}
 			}
 		}
@@ -197,8 +306,20 @@ class Truenas extends utils.Adapter {
 			for (const [username, info] of Object.entries(lastLoginByUser)) {
 				const safeId = this._safeId(username);
 				await this._ensureChannel(`users.${safeId}`, username);
-				await this._setStateObj(`users.${safeId}.lastLogin`, 'Last login', 'string', 'text', new Date(info.ts).toISOString());
-				await this._setStateObj(`users.${safeId}.lastLoginAddress`, 'Last login address', 'string', 'text', info.address);
+				await this._setStateObj(
+					`users.${safeId}.lastLogin`,
+					'Last login',
+					'string',
+					'text',
+					new Date(info.ts).toISOString(),
+				);
+				await this._setStateObj(
+					`users.${safeId}.lastLoginAddress`,
+					'Last login address',
+					'string',
+					'text',
+					info.address,
+				);
 			}
 
 			const sets = {
@@ -212,20 +333,68 @@ class Truenas extends utils.Adapter {
 			for (const rec of userLogins) {
 				const ts = rec.message_timestamp * 1000;
 				const u = rec.username;
-				if (now - ts <= 5 * 60 * 1000) sets.last5min.add(u);
-				if (now - ts <= 60 * 60 * 1000) sets.last1h.add(u);
-				if (now - ts <= 24 * 60 * 60 * 1000) sets.last24h.add(u);
-				if (ts >= startOfMonth) sets.thisMonth.add(u);
-				if (ts >= start6months) sets.last6months.add(u);
-				if (ts >= startOfYear) sets.thisYear.add(u);
+				if (now - ts <= 5 * 60 * 1000) {
+					sets.last5min.add(u);
+				}
+				if (now - ts <= 60 * 60 * 1000) {
+					sets.last1h.add(u);
+				}
+				if (now - ts <= 24 * 60 * 60 * 1000) {
+					sets.last24h.add(u);
+				}
+				if (ts >= startOfMonth) {
+					sets.thisMonth.add(u);
+				}
+				if (ts >= start6months) {
+					sets.last6months.add(u);
+				}
+				if (ts >= startOfYear) {
+					sets.thisYear.add(u);
+				}
 			}
 
-			await this._setStateObj('users.activeCount.last5min', 'Unique users last 5 min', 'number', 'value', sets.last5min.size);
-			await this._setStateObj('users.activeCount.last1h', 'Unique users last 1 h', 'number', 'value', sets.last1h.size);
-			await this._setStateObj('users.activeCount.last24h', 'Unique users last 24 h', 'number', 'value', sets.last24h.size);
-			await this._setStateObj('users.activeCount.thisMonth', 'Unique users this month', 'number', 'value', sets.thisMonth.size);
-			await this._setStateObj('users.activeCount.last6months', 'Unique users last 6 months', 'number', 'value', sets.last6months.size);
-			await this._setStateObj('users.activeCount.thisYear', 'Unique users this year', 'number', 'value', sets.thisYear.size);
+			await this._setStateObj(
+				'users.activeCount.last5min',
+				'Unique users last 5 min',
+				'number',
+				'value',
+				sets.last5min.size,
+			);
+			await this._setStateObj(
+				'users.activeCount.last1h',
+				'Unique users last 1 h',
+				'number',
+				'value',
+				sets.last1h.size,
+			);
+			await this._setStateObj(
+				'users.activeCount.last24h',
+				'Unique users last 24 h',
+				'number',
+				'value',
+				sets.last24h.size,
+			);
+			await this._setStateObj(
+				'users.activeCount.thisMonth',
+				'Unique users this month',
+				'number',
+				'value',
+				sets.thisMonth.size,
+			);
+			await this._setStateObj(
+				'users.activeCount.last6months',
+				'Unique users last 6 months',
+				'number',
+				'value',
+				sets.last6months.size,
+			);
+			await this._setStateObj(
+				'users.activeCount.thisYear',
+				'Unique users this year',
+				'number',
+				'value',
+				sets.thisYear.size,
+			);
 		}
 
 		// --- disks ---
@@ -245,13 +414,34 @@ class Truenas extends utils.Adapter {
 			if (Array.isArray(tempEntry)) {
 				const [temp, threshold] = tempEntry;
 				if (temp != null) {
-					await this._setStateObj(`disks.${safeId}.temperature`, 'Temperature', 'number', 'value.temperature', temp, '°C');
+					await this._setStateObj(
+						`disks.${safeId}.temperature`,
+						'Temperature',
+						'number',
+						'value.temperature',
+						temp,
+						'°C',
+					);
 				}
 				if (threshold != null) {
-					await this._setStateObj(`disks.${safeId}.temperatureMax`, 'Critical temperature', 'number', 'value.temperature', threshold, '°C');
+					await this._setStateObj(
+						`disks.${safeId}.temperatureMax`,
+						'Critical temperature',
+						'number',
+						'value.temperature',
+						threshold,
+						'°C',
+					);
 				}
 			} else if (tempEntry != null) {
-				await this._setStateObj(`disks.${safeId}.temperature`, 'Temperature', 'number', 'value.temperature', tempEntry, '°C');
+				await this._setStateObj(
+					`disks.${safeId}.temperature`,
+					'Temperature',
+					'number',
+					'value.temperature',
+					tempEntry,
+					'°C',
+				);
 			}
 		}
 	}
@@ -259,8 +449,8 @@ class Truenas extends utils.Adapter {
 	/**
 	 * Ensure a channel object exists.
 	 *
-	 * @param {string} id
-	 * @param {string} name
+	 * @param {string} id state id
+	 * @param {string} name channel display name
 	 */
 	async _ensureChannel(id, name) {
 		await this.extendObjectAsync(id, {
@@ -273,11 +463,12 @@ class Truenas extends utils.Adapter {
 	/**
 	 * Ensure state object exists (extendObject) and set its value.
 	 *
-	 * @param {string} id
-	 * @param {string} name
-	 * @param {'string'|'number'|'boolean'} type
-	 * @param {string} role
-	 * @param {*} val
+	 * @param {string} id state id
+	 * @param {string} name state display name
+	 * @param {'string'|'number'|'boolean'} type state type
+	 * @param {string} role state role
+	 * @param {string|number|boolean} val value to set
+	 * @param {string} [unit] optional unit
 	 */
 	async _setStateObj(id, name, type, role, val, unit) {
 		await this.extendObjectAsync(id, {
@@ -291,8 +482,8 @@ class Truenas extends utils.Adapter {
 	/**
 	 * Convert a raw name to a safe ioBroker state ID segment.
 	 *
-	 * @param {string} name
-	 * @returns {string}
+	 * @param {string} name raw name
+	 * @returns {string} safe state id segment
 	 */
 	_safeId(name) {
 		return name.replace(/[^a-zA-Z0-9_-]/g, '_');
