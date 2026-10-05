@@ -18,7 +18,9 @@ class Truenas extends utils.Adapter {
 	async onReady() {
 		this.setState('info.connection', false, true);
 
-		const { host, username, apiKey, pollInterval, allowSelfSigned } = this.config;
+		const { username, pollInterval, allowSelfSigned } = this.config;
+		const host = (this.config.host || '').trim().replace(/^https?:\/\//i, '');
+		const apiKey = (this.config.apiKey || '').trim();
 
 		if (!host || !apiKey) {
 			this.log.error('Configuration incomplete: host and API key are required');

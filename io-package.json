@@ -83,7 +83,7 @@
 		"allowSelfSigned": true
 	},
 	"encryptedNative": ["apiKey"],
-	"protectedNative": ["apiKey"],
+	"protectedNative": [],
 	"objects": [],
 	"instanceObjects": [
 		{
