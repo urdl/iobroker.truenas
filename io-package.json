@@ -1,8 +1,21 @@
 {
 	"common": {
 		"name": "truenas",
-		"version": "0.5.0",
+		"version": "0.6.0",
 		"news": {
+			"0.6.0": {
+				"en": "Add TrueNAS alert monitoring (count, highest level, active alerts as JSON)",
+				"de": "TrueNAS-Alert-Monitoring hinzugefügt (Anzahl, höchste Stufe, aktive Alerts als JSON)",
+				"ru": "Add TrueNAS alert monitoring (count, highest level, active alerts as JSON)",
+				"pt": "Add TrueNAS alert monitoring (count, highest level, active alerts as JSON)",
+				"nl": "Add TrueNAS alert monitoring (count, highest level, active alerts as JSON)",
+				"fr": "Add TrueNAS alert monitoring (count, highest level, active alerts as JSON)",
+				"it": "Add TrueNAS alert monitoring (count, highest level, active alerts as JSON)",
+				"es": "Add TrueNAS alert monitoring (count, highest level, active alerts as JSON)",
+				"pl": "Add TrueNAS alert monitoring (count, highest level, active alerts as JSON)",
+				"uk": "Add TrueNAS alert monitoring (count, highest level, active alerts as JSON)",
+				"zh-cn": "Add TrueNAS alert monitoring (count, highest level, active alerts as JSON)"
+			},
 			"0.5.0": {
 				"en": "First tagged release: system/pool/dataset/disk monitoring, CPU temp/load/usage, user login tracking (WebUI/API and SMB)",
 				"de": "Erstes getaggtes Release: System-/Pool-/Dataset-/Disk-Monitoring, CPU-Temperatur/-Last/-Auslastung, Benutzer-Login-Tracking (WebUI/API und SMB)",

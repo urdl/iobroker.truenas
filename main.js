@@ -80,7 +80,8 @@ class Truenas extends utils.Adapter {
 	 * @param {import('./lib/truenas-client').TrueNasData} data raw data fetched from TrueNAS
 	 */
 	async _updateStates(data) {
-		const { systemInfo, pools, diskList, diskTemps, datasets, cpuTempResult, cpuUsageResult, userLogins } = data;
+		const { systemInfo, pools, diskList, diskTemps, datasets, cpuTempResult, cpuUsageResult, userLogins, alerts } =
+			data;
 
 		// --- system ---
 		await this._ensureChannel('system', 'System');
@@ -444,6 +445,33 @@ class Truenas extends utils.Adapter {
 				);
 			}
 		}
+
+		// --- alerts ---
+		await this._ensureChannel('alerts', 'Alerts');
+		const activeAlerts = Array.isArray(alerts) ? alerts.filter(a => !a.dismissed) : [];
+		await this._setStateObj('alerts.count', 'Active alerts', 'number', 'value', activeAlerts.length);
+
+		const levelPriority = ['CRITICAL', 'ERROR', 'WARNING', 'NOTICE', 'INFO'];
+		const highestLevel = activeAlerts.reduce((highest, a) => {
+			const idx = levelPriority.indexOf(a.level);
+			const highestIdx = levelPriority.indexOf(highest);
+			return idx !== -1 && (highestIdx === -1 || idx < highestIdx) ? a.level : highest;
+		}, '');
+		await this._setStateObj('alerts.highestLevel', 'Highest active alert level', 'string', 'text', highestLevel);
+
+		await this._setStateObj(
+			'alerts.json',
+			'Active alerts (JSON)',
+			'string',
+			'json',
+			JSON.stringify(
+				activeAlerts.map(a => ({
+					level: a.level,
+					text: a.formatted,
+					lastOccurrence: a.last_occurrence?.$date,
+				})),
+			),
+		);
 	}
 
 	/**

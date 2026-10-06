@@ -110,6 +110,16 @@ One channel per disk (eMMC/boot media excluded).
 | `temperature` | number | °C | Current SMART temperature |
 | `temperatureMax` | number | °C | Critical temperature threshold |
 
+### Alerts (`truenas.0.alerts.*`)
+
+TrueNAS's own alert system — hardware issues, pool problems, update/EOL notices, etc. Dismissed alerts are excluded.
+
+| State | Type | Description |
+|---|---|---|
+| `count` | number | Number of active (non-dismissed) alerts |
+| `highestLevel` | string | Highest severity among active alerts (`CRITICAL` > `ERROR` > `WARNING` > `NOTICE` > `INFO`), empty if none |
+| `json` | string | Active alerts as a JSON array (`level`, `text`, `lastOccurrence`) |
+
 ### User logins (`truenas.0.users.*`)
 
 Populated from the TrueNAS audit log (successful `AUTHENTICATION` events since 1 January of the current year), covering both WebUI/API logins **and SMB share logins** — so a user that only ever connects over SMB (e.g. an app mounting a share, never touching the TrueNAS WebUI) still shows up here.
@@ -147,6 +157,9 @@ Counts of **distinct users** who logged in at least once within the time window.
 ---
 
 ## Changelog
+
+### 0.6.0 (2026-10-06)
+* Add TrueNAS alert monitoring (`truenas.0.alerts.*`)
 
 ### 0.5.0 (2026-10-06)
 * First tagged GitHub release — no functional changes since 0.0.1 below
