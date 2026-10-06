@@ -158,6 +158,9 @@ Counts of **distinct users** who logged in at least once within the time window.
 
 ## Changelog
 
+### 0.6.1 (2026-10-07)
+* Fix periodic disconnects: `setInterval` fired the next poll cycle even while the previous one was still running, stacking concurrent TrueNAS calls past the middleware's 20-per-session limit and causing repeated "Maximum number of concurrent calls (20) has exceeded" reconnects. An in-flight guard now skips a cycle instead of overlapping it.
+
 ### 0.6.0 (2026-10-06)
 * Add TrueNAS alert monitoring (`truenas.0.alerts.*`)
 

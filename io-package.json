@@ -1,8 +1,21 @@
 {
 	"common": {
 		"name": "truenas",
-		"version": "0.6.0",
+		"version": "0.6.1",
 		"news": {
+			"0.6.1": {
+				"en": "Fix periodic disconnects caused by overlapping poll cycles",
+				"de": "Periodische Verbindungsabbrüche durch überlappende Poll-Zyklen behoben",
+				"ru": "Fix periodic disconnects caused by overlapping poll cycles",
+				"pt": "Fix periodic disconnects caused by overlapping poll cycles",
+				"nl": "Fix periodic disconnects caused by overlapping poll cycles",
+				"fr": "Fix periodic disconnects caused by overlapping poll cycles",
+				"it": "Fix periodic disconnects caused by overlapping poll cycles",
+				"es": "Fix periodic disconnects caused by overlapping poll cycles",
+				"pl": "Fix periodic disconnects caused by overlapping poll cycles",
+				"uk": "Fix periodic disconnects caused by overlapping poll cycles",
+				"zh-cn": "Fix periodic disconnects caused by overlapping poll cycles"
+			},
 			"0.6.0": {
 				"en": "Add TrueNAS alert monitoring (count, highest level, active alerts as JSON)",
 				"de": "TrueNAS-Alert-Monitoring hinzugefügt (Anzahl, höchste Stufe, aktive Alerts als JSON)",

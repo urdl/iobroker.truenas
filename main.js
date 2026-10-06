@@ -13,6 +13,7 @@ class Truenas extends utils.Adapter {
 		this.on('unload', this.onUnload.bind(this));
 		this._client = null;
 		this._pollTimer = null;
+		this._polling = false;
 	}
 
 	async onReady() {
@@ -54,25 +55,39 @@ class Truenas extends utils.Adapter {
 	}
 
 	async _poll() {
-		if (!this._client || !this._client.connected) {
-			this.setState('info.connection', false, true);
-			this.log.warn('Not connected, attempting reconnect...');
-			try {
-				await this._client.connect();
-				this.setState('info.connection', true, true);
-			} catch (err) {
-				this.log.error(`Reconnect failed: ${err.message}`);
-				return;
-			}
+		// setInterval fires on a fixed schedule regardless of whether the
+		// previous cycle finished; without this guard a slow/stuck poll
+		// overlaps with the next one, and their concurrent TrueNAS calls
+		// stack up past the middleware's 20-concurrent-calls-per-session
+		// limit, causing periodic disconnects (see issue #3).
+		if (this._polling) {
+			this.log.warn('Previous poll still running, skipping this cycle');
+			return;
 		}
-
+		this._polling = true;
 		try {
-			const data = await this._client.fetchAll();
-			await this._updateStates(data);
-		} catch (err) {
-			this.setState('info.connection', false, true);
-			this.log.error(`Poll failed: ${err.message}`);
-			this._client.disconnect();
+			if (!this._client || !this._client.connected) {
+				this.setState('info.connection', false, true);
+				this.log.warn('Not connected, attempting reconnect...');
+				try {
+					await this._client.connect();
+					this.setState('info.connection', true, true);
+				} catch (err) {
+					this.log.error(`Reconnect failed: ${err.message}`);
+					return;
+				}
+			}
+
+			try {
+				const data = await this._client.fetchAll();
+				await this._updateStates(data);
+			} catch (err) {
+				this.setState('info.connection', false, true);
+				this.log.error(`Poll failed: ${err.message}`);
+				this._client.disconnect();
+			}
+		} finally {
+			this._polling = false;
 		}
 	}
 
