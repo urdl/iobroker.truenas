@@ -88,7 +88,9 @@ class Truenas extends utils.Adapter {
 			} catch (err) {
 				this.setState('info.connection', false, true);
 				this.log.error(`Poll failed: ${err.message}`);
-				this._client.disconnect();
+				// onUnload() can null this._client concurrently (adapter shutdown
+				// mid-poll) - guard against the resulting TypeError (see #4).
+				this._client?.disconnect();
 			}
 		} finally {
 			this._polling = false;

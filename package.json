@@ -1,6 +1,6 @@
 {
 	"name": "iobroker.truenas",
-	"version": "0.6.3",
+	"version": "0.6.4",
 	"description": "Monitor TrueNAS SCALE devices via the official JSON-RPC 2.0 WebSocket API",
 	"author": {
 		"name": "U.R.D.L",

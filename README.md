@@ -158,6 +158,9 @@ Counts of **distinct users** who logged in at least once within the time window.
 
 ## Changelog
 
+### 0.6.4 (2026-10-10)
+* Fix crash on adapter shutdown while a poll cycle is still in flight: `onUnload()` nulls the client, and the still-running `_poll()`'s error handler then called `.disconnect()` on it, throwing an unhandled `TypeError` that crashed the process. Found while verifying the 0.6.3 fix on `iob-test`. See #4.
+
 ### 0.6.3 (2026-10-10)
 * Fix poll loop hanging forever if a TrueNAS API call never responds: all WebSocket calls in `fetchAll()` now have a 20s timeout instead of blocking indefinitely. Also stopped awaiting the initial poll inside `_connect()`, so a hung first cycle can no longer prevent the recurring poll timer from ever being set up. Closes #4.
 

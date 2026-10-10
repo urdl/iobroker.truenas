@@ -1,8 +1,21 @@
 {
 	"common": {
 		"name": "truenas",
-		"version": "0.6.3",
+		"version": "0.6.4",
 		"news": {
+			"0.6.4": {
+				"en": "Fix crash when the adapter shuts down while a poll cycle is still in flight",
+				"de": "Absturz behoben, wenn der Adapter beendet wird, während ein Poll-Zyklus noch läuft",
+				"ru": "Fix crash when the adapter shuts down while a poll cycle is still in flight",
+				"pt": "Fix crash when the adapter shuts down while a poll cycle is still in flight",
+				"nl": "Fix crash when the adapter shuts down while a poll cycle is still in flight",
+				"fr": "Fix crash when the adapter shuts down while a poll cycle is still in flight",
+				"it": "Fix crash when the adapter shuts down while a poll cycle is still in flight",
+				"es": "Fix crash when the adapter shuts down while a poll cycle is still in flight",
+				"pl": "Fix crash when the adapter shuts down while a poll cycle is still in flight",
+				"uk": "Fix crash when the adapter shuts down while a poll cycle is still in flight",
+				"zh-cn": "Fix crash when the adapter shuts down while a poll cycle is still in flight"
+			},
 			"0.6.3": {
 				"en": "Fix poll loop hanging forever on an unresponsive TrueNAS API call",
 				"de": "Fehler behoben: Poll-Loop hing bei nicht antwortendem TrueNAS-API-Call für immer fest",
