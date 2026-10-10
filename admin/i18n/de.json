@@ -5,5 +5,7 @@
 	"apiKey": "API-Schlüssel",
 	"pollInterval": "Abfrageintervall (Sekunden)",
 	"allowSelfSigned": "Selbstsigniertes TLS-Zertifikat erlauben",
+	"enableUserLogins": "Login-Tracking pro SMB/WebUI-User",
+	"enableUserLoginsTooltip": "Fragt bei jedem Poll-Zyklus die Login-Historie pro lokalem User ab. Deaktivieren reduziert die Last auf die TrueNAS-API, falls Login-States pro User nicht benötigt werden.",
 	"hostRequired": "Host darf keine Leerzeichen enthalten"
 }

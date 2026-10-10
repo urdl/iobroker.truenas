@@ -19,7 +19,7 @@ class Truenas extends utils.Adapter {
 	async onReady() {
 		this.setState('info.connection', false, true);
 
-		const { username, pollInterval, allowSelfSigned } = this.config;
+		const { username, pollInterval, allowSelfSigned, enableUserLogins } = this.config;
 		const host = (this.config.host || '').trim().replace(/^https?:\/\//i, '');
 		const apiKey = (this.config.apiKey || '').trim();
 
@@ -34,6 +34,7 @@ class Truenas extends utils.Adapter {
 			username: username || 'root',
 			apiKey,
 			allowSelfSigned: allowSelfSigned !== false,
+			enableUserLogins: enableUserLogins !== false,
 			log: this.log,
 		});
 

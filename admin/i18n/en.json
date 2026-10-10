@@ -5,5 +5,7 @@
 	"apiKey": "API Key",
 	"pollInterval": "Poll interval (seconds)",
 	"allowSelfSigned": "Allow self-signed TLS certificate",
+	"enableUserLogins": "Track per-user SMB/WebUI logins",
+	"enableUserLoginsTooltip": "Queries login history per local user every poll cycle. Disable to reduce load on the TrueNAS API if you don't need per-user login states.",
 	"hostRequired": "Host must not contain spaces"
 }

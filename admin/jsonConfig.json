@@ -55,6 +55,17 @@
 			"md": 4,
 			"lg": 3,
 			"xl": 2
+		},
+		"enableUserLogins": {
+			"type": "checkbox",
+			"label": "enableUserLogins",
+			"tooltip": "enableUserLoginsTooltip",
+			"newLine": true,
+			"xs": 12,
+			"sm": 6,
+			"md": 4,
+			"lg": 3,
+			"xl": 2
 		}
 	}
 }

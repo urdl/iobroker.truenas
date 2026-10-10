@@ -158,6 +158,9 @@ Counts of **distinct users** who logged in at least once within the time window.
 
 ## Changelog
 
+### 0.6.2 (2026-10-10)
+* Add `enableUserLogins` setting (checkbox) to disable per-user SMB/WebUI login tracking, reducing API calls per poll cycle for users who don't need the `users.*` states
+
 ### 0.6.1 (2026-10-07)
 * Fix periodic disconnects: `setInterval` fired the next poll cycle even while the previous one was still running, stacking concurrent TrueNAS calls past the middleware's 20-per-session limit and causing repeated "Maximum number of concurrent calls (20) has exceeded" reconnects. An in-flight guard now skips a cycle instead of overlapping it.
 

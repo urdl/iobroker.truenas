@@ -1,8 +1,21 @@
 {
 	"common": {
 		"name": "truenas",
-		"version": "0.6.1",
+		"version": "0.6.2",
 		"news": {
+			"0.6.2": {
+				"en": "Add option to disable per-user SMB/WebUI login tracking to reduce API load",
+				"de": "Option zum Deaktivieren des Login-Trackings pro SMB/WebUI-User hinzugefügt, um API-Last zu reduzieren",
+				"ru": "Add option to disable per-user SMB/WebUI login tracking to reduce API load",
+				"pt": "Add option to disable per-user SMB/WebUI login tracking to reduce API load",
+				"nl": "Add option to disable per-user SMB/WebUI login tracking to reduce API load",
+				"fr": "Add option to disable per-user SMB/WebUI login tracking to reduce API load",
+				"it": "Add option to disable per-user SMB/WebUI login tracking to reduce API load",
+				"es": "Add option to disable per-user SMB/WebUI login tracking to reduce API load",
+				"pl": "Add option to disable per-user SMB/WebUI login tracking to reduce API load",
+				"uk": "Add option to disable per-user SMB/WebUI login tracking to reduce API load",
+				"zh-cn": "Add option to disable per-user SMB/WebUI login tracking to reduce API load"
+			},
 			"0.6.1": {
 				"en": "Fix periodic disconnects caused by overlapping poll cycles",
 				"de": "Periodische Verbindungsabbrüche durch überlappende Poll-Zyklen behoben",
@@ -119,7 +132,8 @@
 		"username": "root",
 		"apiKey": "",
 		"pollInterval": 60,
-		"allowSelfSigned": true
+		"allowSelfSigned": true,
+		"enableUserLogins": true
 	},
 	"encryptedNative": ["apiKey"],
 	"protectedNative": [],
