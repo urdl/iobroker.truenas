@@ -158,6 +158,9 @@ Counts of **distinct users** who logged in at least once within the time window.
 
 ## Changelog
 
+### 0.6.3 (2026-10-10)
+* Fix poll loop hanging forever if a TrueNAS API call never responds: all WebSocket calls in `fetchAll()` now have a 20s timeout instead of blocking indefinitely. Also stopped awaiting the initial poll inside `_connect()`, so a hung first cycle can no longer prevent the recurring poll timer from ever being set up. Closes #4.
+
 ### 0.6.2 (2026-10-10)
 * Add `enableUserLogins` setting (checkbox) to disable per-user SMB/WebUI login tracking, reducing API calls per poll cycle for users who don't need the `users.*` states
 

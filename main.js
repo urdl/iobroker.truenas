@@ -48,7 +48,10 @@ class Truenas extends utils.Adapter {
 		try {
 			await this._client.connect();
 			this.setState('info.connection', true, true);
-			await this._poll();
+			// Not awaited: a hung fetchAll() call must not block onReady() from
+			// reaching setInterval below, or the adapter never polls again (see
+			// Forgejo issue #4). _poll() handles its own errors internally.
+			this._poll();
 		} catch (err) {
 			this.setState('info.connection', false, true);
 			this.log.error(`Connection failed: ${err.message}`);

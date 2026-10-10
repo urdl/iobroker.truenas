@@ -1,8 +1,21 @@
 {
 	"common": {
 		"name": "truenas",
-		"version": "0.6.2",
+		"version": "0.6.3",
 		"news": {
+			"0.6.3": {
+				"en": "Fix poll loop hanging forever on an unresponsive TrueNAS API call",
+				"de": "Fehler behoben: Poll-Loop hing bei nicht antwortendem TrueNAS-API-Call für immer fest",
+				"ru": "Fix poll loop hanging forever on an unresponsive TrueNAS API call",
+				"pt": "Fix poll loop hanging forever on an unresponsive TrueNAS API call",
+				"nl": "Fix poll loop hanging forever on an unresponsive TrueNAS API call",
+				"fr": "Fix poll loop hanging forever on an unresponsive TrueNAS API call",
+				"it": "Fix poll loop hanging forever on an unresponsive TrueNAS API call",
+				"es": "Fix poll loop hanging forever on an unresponsive TrueNAS API call",
+				"pl": "Fix poll loop hanging forever on an unresponsive TrueNAS API call",
+				"uk": "Fix poll loop hanging forever on an unresponsive TrueNAS API call",
+				"zh-cn": "Fix poll loop hanging forever on an unresponsive TrueNAS API call"
+			},
 			"0.6.2": {
 				"en": "Add option to disable per-user SMB/WebUI login tracking to reduce API load",
 				"de": "Option zum Deaktivieren des Login-Trackings pro SMB/WebUI-User hinzugefügt, um API-Last zu reduzieren",
