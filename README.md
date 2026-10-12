@@ -122,9 +122,9 @@ TrueNAS's own alert system — hardware issues, pool problems, update/EOL notice
 
 ### User logins (`truenas.0.users.*`)
 
-Populated from the TrueNAS audit log (successful `AUTHENTICATION` events since 1 January of the current year), covering both WebUI/API logins **and SMB share logins** — so a user that only ever connects over SMB (e.g. an app mounting a share, never touching the TrueNAS WebUI) still shows up here.
+Populated from the TrueNAS audit log (successful `AUTHENTICATION` events since 1 January of the current year), covering WebUI/API logins (`MIDDLEWARE` audit service). SMB share logins are **not** included: `audit.query` with `services: ['SMB']` never returns on this TrueNAS (reproduced for every user and every filter combination), permanently occupying one of the 20-concurrent-calls slots per call with no client-side way to cancel it — see issue #5. Re-add if that's ever resolved on the TrueNAS side.
 
-Queried per real (non-builtin) local user rather than as one global "most recent N" query: TrueNAS doesn't allow combining the `MIDDLEWARE` (WebUI/API) and `SMB` audit databases in a single request, and a shared global limit would let a single high-frequency account (e.g. a sync client re-authenticating every few seconds over SMB) crowd out users who log in rarely. Per-user queries are batched at a concurrency of 10 to stay under TrueNAS's limit of 20 concurrent API calls per session.
+Queried per real (non-builtin) local user rather than as one global "most recent N" query, since a shared global limit would let a single high-frequency account crowd out users who log in rarely. Runs only every 5th poll cycle (cached result served otherwise) and strictly one request at a time to stay well under TrueNAS's limit of 20 concurrent API calls per session.
 
 #### Per user (`truenas.0.users.<username>.*`)
 
@@ -157,6 +157,9 @@ Counts of **distinct users** who logged in at least once within the time window.
 ---
 
 ## Changelog
+
+### 0.6.7 (2026-10-12)
+* Drop SMB login tracking: `audit.query` with `services: ['SMB']` never responds on this TrueNAS, reproduced for every user and filter combination (vs. `MIDDLEWARE` consistently answering in under 500ms). Each call permanently occupied a concurrent-calls slot with no client-side way to cancel it, so no amount of pacing (0.6.5/0.6.6) could avoid eventually hitting the 20-slot limit. WebUI/API login tracking (`MIDDLEWARE`) is unaffected. Closes #5.
 
 ### 0.6.6 (2026-10-12)
 * Fix disconnect loop still reproducible in 0.6.5 within minutes of a fresh connect: a client-side `Promise.race` timeout stops *us* from waiting on a slow `audit.query`, but doesn't cancel it on the TrueNAS side — the server keeps the call running and the slot occupied. Batching 5 at a time let already-abandoned-but-still-running calls from one batch stack on top of the next, exceeding the 20-concurrent-calls limit on their own. Login queries now run strictly one at a time.

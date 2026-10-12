@@ -1,8 +1,21 @@
 {
 	"common": {
 		"name": "truenas",
-		"version": "0.6.6",
+		"version": "0.6.7",
 		"news": {
+			"0.6.7": {
+				"en": "Drop SMB login tracking: audit.query with services ['SMB'] never responds on TrueNAS, permanently leaking a concurrent-calls slot per call and causing disconnects. WebUI/API login tracking (MIDDLEWARE) is unaffected",
+				"de": "SMB-Login-Tracking entfernt: audit.query mit services ['SMB'] antwortet auf TrueNAS nie und belegt pro Call dauerhaft einen Concurrent-Calls-Slot, was Disconnects verursacht. WebUI/API-Login-Tracking (MIDDLEWARE) ist nicht betroffen",
+				"ru": "Drop SMB login tracking: audit.query with services ['SMB'] never responds on TrueNAS, permanently leaking a concurrent-calls slot per call and causing disconnects. WebUI/API login tracking (MIDDLEWARE) is unaffected",
+				"pt": "Drop SMB login tracking: audit.query with services ['SMB'] never responds on TrueNAS, permanently leaking a concurrent-calls slot per call and causing disconnects. WebUI/API login tracking (MIDDLEWARE) is unaffected",
+				"nl": "Drop SMB login tracking: audit.query with services ['SMB'] never responds on TrueNAS, permanently leaking a concurrent-calls slot per call and causing disconnects. WebUI/API login tracking (MIDDLEWARE) is unaffected",
+				"fr": "Drop SMB login tracking: audit.query with services ['SMB'] never responds on TrueNAS, permanently leaking a concurrent-calls slot per call and causing disconnects. WebUI/API login tracking (MIDDLEWARE) is unaffected",
+				"it": "Drop SMB login tracking: audit.query with services ['SMB'] never responds on TrueNAS, permanently leaking a concurrent-calls slot per call and causing disconnects. WebUI/API login tracking (MIDDLEWARE) is unaffected",
+				"es": "Drop SMB login tracking: audit.query with services ['SMB'] never responds on TrueNAS, permanently leaking a concurrent-calls slot per call and causing disconnects. WebUI/API login tracking (MIDDLEWARE) is unaffected",
+				"pl": "Drop SMB login tracking: audit.query with services ['SMB'] never responds on TrueNAS, permanently leaking a concurrent-calls slot per call and causing disconnects. WebUI/API login tracking (MIDDLEWARE) is unaffected",
+				"uk": "Drop SMB login tracking: audit.query with services ['SMB'] never responds on TrueNAS, permanently leaking a concurrent-calls slot per call and causing disconnects. WebUI/API login tracking (MIDDLEWARE) is unaffected",
+				"zh-cn": "Drop SMB login tracking: audit.query with services ['SMB'] never responds on TrueNAS, permanently leaking a concurrent-calls slot per call and causing disconnects. WebUI/API login tracking (MIDDLEWARE) is unaffected"
+			},
 			"0.6.6": {
 				"en": "Fix disconnect loop still possible in 0.6.5: login queries now run strictly one at a time instead of in batches, since a client-side timeout doesn't cancel the call server-side",
 				"de": "Disconnect-Loop, der in 0.6.5 noch möglich war, behoben: Login-Abfragen laufen jetzt strikt nacheinander statt in Batches, da ein Client-Timeout den Call serverseitig nicht abbricht",
