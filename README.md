@@ -158,6 +158,9 @@ Counts of **distinct users** who logged in at least once within the time window.
 
 ## Changelog
 
+### 0.6.6 (2026-10-12)
+* Fix disconnect loop still reproducible in 0.6.5 within minutes of a fresh connect: a client-side `Promise.race` timeout stops *us* from waiting on a slow `audit.query`, but doesn't cancel it on the TrueNAS side — the server keeps the call running and the slot occupied. Batching 5 at a time let already-abandoned-but-still-running calls from one batch stack on top of the next, exceeding the 20-concurrent-calls limit on their own. Login queries now run strictly one at a time.
+
 ### 0.6.5 (2026-10-12)
 * Fix disconnect loop regression of #3, reintroduced by `enableUserLogins` (0.6.2): 2 audit.query calls per real user, every poll cycle, was enough on its own to exceed TrueNAS's 20-concurrent-calls session limit. Per-user login queries now run only every 5th poll cycle (cached result served in between) and the batch concurrency dropped from 10 to 5. Closes #5.
 
