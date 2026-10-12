@@ -158,6 +158,9 @@ Counts of **distinct users** who logged in at least once within the time window.
 
 ## Changelog
 
+### 0.6.5 (2026-10-12)
+* Fix disconnect loop regression of #3, reintroduced by `enableUserLogins` (0.6.2): 2 audit.query calls per real user, every poll cycle, was enough on its own to exceed TrueNAS's 20-concurrent-calls session limit. Per-user login queries now run only every 5th poll cycle (cached result served in between) and the batch concurrency dropped from 10 to 5. Closes #5.
+
 ### 0.6.4 (2026-10-10)
 * Fix crash on adapter shutdown while a poll cycle is still in flight: `onUnload()` nulls the client, and the still-running `_poll()`'s error handler then called `.disconnect()` on it, throwing an unhandled `TypeError` that crashed the process. Found while verifying the 0.6.3 fix on `iob-test`. See #4.
 

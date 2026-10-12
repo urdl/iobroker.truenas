@@ -1,8 +1,21 @@
 {
 	"common": {
 		"name": "truenas",
-		"version": "0.6.4",
+		"version": "0.6.5",
 		"news": {
+			"0.6.5": {
+				"en": "Fix disconnect loop (regression of #3): per-user login queries now run every 5th poll cycle instead of every cycle, with lower batch concurrency",
+				"de": "Disconnect-Loop behoben (Regression von #3): Login-Abfragen pro User laufen jetzt nur noch alle 5 Poll-Zyklen statt bei jedem, mit niedrigerer Batch-Concurrency",
+				"ru": "Fix disconnect loop (regression of #3): per-user login queries now run every 5th poll cycle instead of every cycle, with lower batch concurrency",
+				"pt": "Fix disconnect loop (regression of #3): per-user login queries now run every 5th poll cycle instead of every cycle, with lower batch concurrency",
+				"nl": "Fix disconnect loop (regression of #3): per-user login queries now run every 5th poll cycle instead of every cycle, with lower batch concurrency",
+				"fr": "Fix disconnect loop (regression of #3): per-user login queries now run every 5th poll cycle instead of every cycle, with lower batch concurrency",
+				"it": "Fix disconnect loop (regression of #3): per-user login queries now run every 5th poll cycle instead of every cycle, with lower batch concurrency",
+				"es": "Fix disconnect loop (regression of #3): per-user login queries now run every 5th poll cycle instead of every cycle, with lower batch concurrency",
+				"pl": "Fix disconnect loop (regression of #3): per-user login queries now run every 5th poll cycle instead of every cycle, with lower batch concurrency",
+				"uk": "Fix disconnect loop (regression of #3): per-user login queries now run every 5th poll cycle instead of every cycle, with lower batch concurrency",
+				"zh-cn": "Fix disconnect loop (regression of #3): per-user login queries now run every 5th poll cycle instead of every cycle, with lower batch concurrency"
+			},
 			"0.6.4": {
 				"en": "Fix crash when the adapter shuts down while a poll cycle is still in flight",
 				"de": "Absturz behoben, wenn der Adapter beendet wird, während ein Poll-Zyklus noch läuft",
